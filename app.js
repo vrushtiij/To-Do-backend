@@ -13,7 +13,7 @@ app.use(cookieParser())
 app.use(bodyparser.json())
 
 app.use(cors({
-  origin:"https://to-do-frontend-one-mu.vercel.app/",
+  origin: "https://to-do-frontend-one-mu.vercel.app/", 
   credentials: true,
 }));
 
