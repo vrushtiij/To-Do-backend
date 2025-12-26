@@ -1,6 +1,8 @@
 
 const jwt = require('jsonwebtoken')
-const db = require('../db')
+const User = require("../models/user.model");
+const todo = require("../models/todo.model");
+const { default: mongoose } = require('mongoose');
 
 require('dotenv').config();
 const secretkey = process.env.jwt_secret;
@@ -9,14 +11,14 @@ exports.login = async (req,res) => {
     user = req.body.username;
     passw = req.body.password;
     try{
-        const result = await db.sql.query`SELECT user_id, passw FROM users WHERE username = ${user}`
-        if (result.recordset.length === 0)
+        const result = await User.findOne({ user })
+        if (!result)
         {
             return res.json({'message': 'username invalid'})
         }
         else {
-            if (passw == result.recordset[0].passw) {
-                const token = jwt.sign({user_id: result.recordset[0].user_id}, secretkey, {
+            if (passw == result.pass) {
+                const token = jwt.sign({user_id: result._id.toString()}, secretkey, {
                     expiresIn: '1h'
                 });
                 res.cookie("auth", token, {
@@ -43,10 +45,14 @@ exports.register = async (req,res) => {
     username = req.body.user;
     password = req.body.pass;
     try {
-        const result = await db.sql.query`Select * from users where username = ${username}`
-        if (result.recordset.length === 0)
+        const result = await User.findOne({user: username})
+        if (!result)
         {
-            await db.sql.query`insert into users(name,username, passw) values(${namee}, ${username}, ${password})`
+            await User.create({
+                name: namee,
+                user: username,
+                pass: password
+            })
             return res.status(201).json({'success': true , 'message': 'user created'})
         }
         else
@@ -67,8 +73,8 @@ exports.checkAuth = async (req,res) => {
 exports.getTask = async (req,res) => {
     user_id = req.user_id;
     try {
-    result = await db.sql.query`Select * from ToDo where user_id = ${user_id}`;
-    return res.json(result.recordset)
+    result = await todo.find({user_id: new mongoose.Types.ObjectId(user_id)});
+    return res.json(result)
     }
     catch(err){
         console.log(err);
@@ -85,7 +91,11 @@ exports.createTask = async (req,res) => {
     }
     else {
         try {
-                await db.sql.query`insert into ToDo(task,task_status,user_id) values(${task}, ${status}, ${user_id})`
+                await todo.create({
+                    task: task,
+                    status: status,
+                    user_id: new mongoose.Types.ObjectId(user_id)
+                })
                 return res.status(201).json({'message': 'task added'});
         }
         catch(err) {
@@ -106,7 +116,12 @@ exports.updateTask = async (req,res) => {
     }
     else {
         try {
-            await db.sql.query`update ToDo set task= ${task}, task_status= ${status} where task_id = ${task_id} and user_id = ${user_id}`
+            await todo.updateOne(   
+                {   _id: new mongoose.Types.ObjectId(task_id),
+                    user_id: new mongoose.Types.ObjectId(user_id)
+                },
+                {$set: {task: task, status: status}}
+            )
             return res.json({"message": "updated"});
         }
         catch(err) {
@@ -125,15 +140,9 @@ exports.deleteTask = async (req,res) => {
     }
     else {
         try {
-            const result = await db.sql.query`Select * from ToDo where task_id= ${task_id} and user_id = ${user_id}`
-            if (result.recordset.length === 0)
-            {
-                res.json({'message': 'No such task exists'})
-            }
-            else {
-                await db.sql.query`delete from ToDo where task_id = ${task_id} and user_id = ${user_id}`
-                return res.json({"message": "deleted"});
-            }
+            await todo.deleteOne({_id: new mongoose.Types.ObjectId(task_id), user_id: new mongoose.Types.ObjectId(user_id)})
+            return res.json({"message": "deleted"});
+            
         }
         catch(err) {
             console.log(err);

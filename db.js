@@ -1,23 +1,13 @@
-const sql = require('mssql/msnodesqlv8')
 
-const config = {
-    connectionString:
-    "Driver={ODBC Driver 18 for SQL Server};" +
-    "Server=localhost;" +
-    "Database=tempdb;" +
-    "Trusted_Connection=Yes;" +
-    "Encrypt=Yes;" +
-    "TrustServerCertificate=Yes;"
-};
+const mongoose = require('mongoose');
 
-exports.connect = async () => {
-    try{
-        await sql.connect(config);
-        console.log("Database Connected Successfully")
-    }
-    catch(err){
-        console.log(err);
-    }
+async function main() {
+  const url = "mongodb+srv://root:pass%40123@cluster0.j41p0ty.mongodb.net/To-Do-List?retryWrites=true&w=majority&appName=Cluster0"
+
+  await mongoose.connect(url);
+  console.log("MongoDB connected");
 }
 
-exports.sql = sql;
+main().catch(err => console.log(err));
+
+module.exports = main;

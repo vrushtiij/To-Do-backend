@@ -7,7 +7,7 @@ const userRoutes = require('./routes/userRoutes')
 const db = require('./db');
 
 const app = express();
-db.connect();
+db();
 
 app.use(cookieParser())
 app.use(bodyparser.json())
